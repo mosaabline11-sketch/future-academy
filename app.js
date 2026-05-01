@@ -111,6 +111,7 @@ function render() {
 // ══════════════════════════════════════════════════
 function renderHome(s) {
   const weekly = s.weeklyTop.map(id => s.players.find(p => p.id === id)).filter(Boolean);
+  const ov = s.siteStatsOverride || {};
 
   return `
   <div class="hero">
@@ -118,9 +119,9 @@ function renderHome(s) {
     <div class="hero-deco1">⚽</div><div class="hero-deco2">🏆</div>
     <div class="hero-inner">
       <div>
-        <div class="hero-tag">🏆 أكاديمية كرة قدم احترافية</div>
+        <div class="hero-tag">${ov.hero_tag || '🏆 أكاديمية كرة قدم احترافية'}</div>
         <h1>FUTURE<br><span>ACADEMY</span></h1>
-        <p>منصة إدارة متكاملة للاعبين، التمارين، الخطط التكتيكية، والأخبار.</p>
+        <p>${ov.hero_text || 'منصة إدارة متكاملة للاعبين، التمارين، الخطط التكتيكية، والأخبار.'}</p>
         <div class="hero-btns">
           <button class="btn-primary" onclick="navigate('players')">👥 عرض اللاعبين</button>
           <button class="btn-outline" onclick="navigate('admin')">⚙️ دخول الإدارة</button>
@@ -131,18 +132,15 @@ function renderHome(s) {
         <div class="hero-card-title">FUTURE ACADEMY</div>
         <div class="hero-card-sub">TRAIN • ANALYZE • WIN</div>
         <div class="hero-mini-stats">
-          <div class="hero-mini-stat"><div class="val">${s.players.length}</div><div class="lbl">لاعب</div></div>
-          <div class="hero-mini-stat"><div class="val" style="color:#10b981">${s.training.length}</div><div class="lbl">تمرين</div></div>
+          <div class="hero-mini-stat"><div class="val">${ov.players_val || s.players.length}</div><div class="lbl">${ov.players_lbl || 'لاعب'}</div></div>
+          <div class="hero-mini-stat"><div class="val" style="color:#10b981">${ov.sessions_val || s.training.length}</div><div class="lbl">${ov.sessions_lbl || 'تمرين'}</div></div>
         </div>
       </div>
     </div>
   </div>
 
   <div class="stats-grid">
-    ${statCard('👥','لاعب مسجل', s.players.length, '#38bdf8')}
-    ${statCard('📅','جلسة تمرين', s.training.length, '#10b981')}
-    ${statCard('📰','إعلان', s.news.length, '#a78bfa')}
-    ${statCard('🏴','التشكيلة', s.formationName||'—', '#f59e0b')}
+    ${buildStatCards(s)}
   </div>
 
   ${weekly.length ? `
@@ -330,7 +328,7 @@ function renderPlayers(s) {
     <div class="player-stats-grid" style="margin-top:18px">
       ${Object.entries(selPlayer.stats||{}).map(([k,v]) => {
         const lbl = STAT_LABELS[k] || k;
-        const pct = Math.min(100, v);
+        const pct = Math.min(100, v); // already 0-100
         return `<div class="player-stat-item" style="background:${cfg.color}10;border:1px solid ${cfg.color}20">
           <div class="player-stat-val" style="color:${cfg.color}">${v}</div>
           <div class="player-stat-bar-wrap"><div class="player-stat-bar" style="width:${pct}%;background:${cfg.color}"></div></div>
@@ -388,7 +386,10 @@ function renderTraining(s) {
     </div>
     <div class="tactic-panel">
       <div class="tactic-controls">
-        <h3 style="font-size:15px;font-weight:900;color:#94a3b8">🏴 التشكيلة الحالية: ${s.formationName||'مخصصة'}</h3>
+        <div>
+          <h3 style="font-size:15px;font-weight:900;color:#94a3b8">🏴 التشكيلة الحالية: ${s.formationName||'مخصصة'}</h3>
+          ${s.formationDay ? `<div style="margin-top:4px;font-size:12px;color:${DAY_COLORS[s.formationDay]||'#64748b'}">📅 يوم التنفيذ: ${s.formationDay}</div>` : ''}
+        </div>
         <button class="tactic-anim-btn${s.formationAnimated?' on':''}" onclick="onToggleAnim()">
           ${s.formationAnimated ? '⏸ إيقاف' : '▶ تحريك'}
         </button>
@@ -416,10 +417,11 @@ function buildField(s) {
       const c = POS_FIELD_COLORS[pos] || '#38bdf8';
       const delay = (li * line.length + si) * 0.18;
       const assignedPlayer = slot.pid ? players.find(p => p.id === slot.pid) : null;
-      const label = assignedPlayer ? assignedPlayer.name.split(' ')[0] : pos;
+      const firstName = assignedPlayer ? assignedPlayer.name.split(' ')[0] : pos;
+      const label = firstName.length > 6 ? firstName.slice(0,6)+'.' : firstName;
       return `<div class="field-player">
         <div class="field-dot${animated?' animated':''}" title="${assignedPlayer?assignedPlayer.name:pos}"
-          style="background:radial-gradient(circle at 35% 35%,${c},${c}88);border:2px solid ${c};box-shadow:0 0 ${animated?20:10}px ${c}55;animation-delay:${delay}s;font-size:${assignedPlayer?'7px':'9px'}">${label}</div>
+          style="background:radial-gradient(circle at 35% 35%,${c},${c}88);border:2px solid ${c};box-shadow:0 0 ${animated?20:10}px ${c}55;animation-delay:${delay}s;font-size:${assignedPlayer?'6px':'9px'}">${label}</div>
         <div class="field-shadow" style="background:${c};animation-delay:${delay}s"></div>
       </div>`;
     }).join('');
@@ -481,6 +483,7 @@ function renderAdmin(s) {
     {id:'news',      label:'📰 الأخبار'},
     {id:'training',  label:'💪 التمارين'},
     {id:'formation', label:'🏴 الخطط'},
+    {id:'siteStats', label:'📊 إحصائيات الواجهة'},
   ];
 
   return `
@@ -502,6 +505,7 @@ function renderAdmin(s) {
     ${renderAdminNews(s)}
     ${renderAdminTraining(s)}
     ${renderAdminFormation(s)}
+    ${renderAdminSiteStats(s)}
   </div>`;
 }
 
@@ -685,14 +689,30 @@ function renderAdminFormation(s) {
   return `
   <div class="admin-section${adminTab==='formation'?' active':''}" data-section="formation">
     <div class="admin-form-box">
-      <h4>⚽ إعدادات التشكيلة</h4>
+      <h4>⚽ إعدادات التشكيلة الحالية</h4>
 
-      <div class="form-field" style="margin-bottom:16px">
-        <div class="form-label">اسم التشكيلة</div>
-        <div style="display:flex;gap:8px;margin-top:6px">
-          <input class="form-input" id="fmtNameInput" value="${s.formationName||''}" placeholder="مثال: 4-3-3 مخصصة" style="flex:1"/>
-          <button class="btn-save" onclick="fmtSaveName()">حفظ</button>
+      <div class="form-grid" style="margin-bottom:16px">
+        <div class="form-field">
+          <div class="form-label">اسم التشكيلة</div>
+          <input class="form-input" id="fmtNameInput" value="${s.formationName||''}" placeholder="مثال: 4-3-3 مخصصة" />
         </div>
+        <div class="form-field">
+          <div class="form-label">📅 يوم تنفيذ الخطة</div>
+          <select class="form-input" id="fmtDayInput">
+            <option value="">-- اختر اليوم --</option>
+            ${['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'].map(d =>
+              `<option value="${d}"${s.formationDay===d?' selected':''}>${d}</option>`
+            ).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        <button class="btn-save" onclick="fmtSaveName();fmtSaveDay()">💾 حفظ الإعدادات</button>
+        <button onclick="fmtSavePlan()"
+          style="padding:10px 18px;border-radius:12px;font-size:13px;font-weight:900;cursor:pointer;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.35);color:#a78bfa">
+          ⭐ حفظ كخطة محفوظة
+        </button>
       </div>
 
       <div class="form-field" style="margin-bottom:16px">
@@ -708,7 +728,7 @@ function renderAdminFormation(s) {
         </div>
       </div>
 
-      <div class="form-field" style="margin-bottom:16px">
+      <div class="form-field" style="margin-bottom:0">
         <div class="form-label">حركة اللاعبين</div>
         <button onclick="onToggleAnim()" style="margin-top:8px;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:900;cursor:pointer;transition:.2s;
           background:${s.formationAnimated?'rgba(16,185,129,.15)':'rgba(255,255,255,.04)'};
@@ -718,6 +738,31 @@ function renderAdminFormation(s) {
         </button>
       </div>
     </div>
+
+    <!-- Saved plans list -->
+    ${s.savedFormations && s.savedFormations.length ? `
+    <div style="margin-bottom:20px">
+      <h4 style="font-size:14px;font-weight:900;color:#94a3b8;margin-bottom:12px">⭐ الخطط المحفوظة</h4>
+      <div class="admin-list">
+        ${s.savedFormations.map(plan => {
+          const dc = DAY_COLORS[plan.day] || '#64748b';
+          return `<div class="admin-list-item" style="border-color:rgba(167,139,250,.15)">
+            <div style="font-size:26px">🏴</div>
+            <div class="admin-list-item-info">
+              <div class="admin-list-item-name">${plan.name}</div>
+              <div class="admin-list-item-sub">
+                ${plan.day && plan.day!=='—' ? `<span style="color:${dc};background:${dc}15;padding:2px 8px;border-radius:6px;font-size:11px">📅 ${plan.day}</span>` : ''}
+                <span style="color:#64748b;font-size:11px;margin-right:6px">${plan.slots.length} صفوف · ${plan.slots.reduce((a,l)=>a+l.length,0)} مركز</span>
+              </div>
+            </div>
+            <div class="admin-list-actions">
+              <button class="btn-edit" onclick="fmtActivatePlan(${plan.id})" title="تحميل وتفعيل">▶</button>
+              <button class="btn-del" onclick="fmtDeletePlan(${plan.id})">🗑️</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : ''}
 
     <!-- Line editor -->
     <div class="formation-editor">
@@ -743,9 +788,15 @@ function fmtAddSlot(li)              { addSlotToLine(li);               render()
 function fmtRemoveSlot(li,si)        { removeSlotFromLine(li,si);       render(); }
 function fmtUpdatePos(li,si,val)     { updateSlotPos(li, si, val.trim().toUpperCase()||'CM'); /* no full re-render needed */ }
 function fmtAssignPlayer(li,si,val)  { assignPlayerToSlot(li, si, val ? Number(val) : null); /* no full re-render */ }
-function fmtSaveName()               {
+function fmtSaveName() {
   const v = document.getElementById('fmtNameInput')?.value?.trim();
-  if (v) { setFormationName(v); toast('تم حفظ اسم التشكيلة ✅'); render(); }
+  if (v) { setFormationName(v); }
+}
+function fmtSaveDay() {
+  const v = document.getElementById('fmtDayInput')?.value;
+  setFormationDay(v || '');
+  toast('تم حفظ الإعدادات ✅');
+  render();
 }
 function fmtLoadPreset(key)          { loadPresetFormation(key); toast(`تم تحميل تشكيلة ${key} ✅`); render(); }
 
@@ -767,8 +818,9 @@ function openPlayerModal(id) {
 
   const statFields = Object.entries(STAT_LABELS).map(([key, label]) => `
     <div class="form-field">
-      <div class="form-label">${label}</div>
-      <input class="form-input" id="stat_${key}" type="number" min="0" max="99" value="${defaultStats[key]||0}" />
+      <div class="form-label">${label} <span style="color:#475569;font-size:10px">(0-100)</span></div>
+      <input class="form-input" id="stat_${key}" type="number" min="0" max="100" value="${defaultStats[key]||0}"
+             oninput="this.value=Math.min(100,Math.max(0,this.value||0));updatePlayerPreview()" />
     </div>`).join('');
 
   openModal(p ? 'تعديل لاعب' : 'إضافة لاعب جديد', `
@@ -778,7 +830,21 @@ function openPlayerModal(id) {
       <div class="form-field"><div class="form-label">رقم القميص</div><input class="form-input" id="pNumber" type="number" value="${p?.number||''}" placeholder="9" /></div>
       <div class="form-field"><div class="form-label">المركز</div><select class="form-input" id="pPos" onchange="updatePlayerPreview()">${posOptions}</select></div>
       <div class="form-field"><div class="form-label">العمر</div><input class="form-input" id="pAge" type="number" value="${p?.age||''}" placeholder="14" /></div>
-      <div class="form-field full"><div class="form-label">رابط الصورة</div><input class="form-input" id="pImg" value="${p?.image||''}" placeholder="https://..." oninput="updatePlayerPreview()" /></div>
+      <div class="form-field full">
+        <div class="form-label">صورة اللاعب</div>
+        <div class="img-upload-wrap">
+          <div class="img-upload-preview" id="imgPreviewWrap">
+            ${p?.image ? `<img id="imgPreviewThumb" src="${p.image}" alt="preview" />` : `<div class="img-upload-placeholder" id="imgPreviewThumb">📷</div>`}
+          </div>
+          <div class="img-upload-controls">
+            <label class="btn-upload" for="pImgFile">📂 رفع صورة من الجهاز</label>
+            <input type="file" id="pImgFile" accept="image/*" style="display:none" onchange="onImgFileChange(this)" />
+            <div class="img-upload-or">أو</div>
+            <input class="form-input" id="pImg" value="${p?.image||''}" placeholder="رابط https://..." oninput="onImgUrlChange(this.value)" />
+          </div>
+        </div>
+        <input type="hidden" id="pImgData" value="${p?.image||''}" />
+      </div>
       <div class="form-field full">
         <div class="form-label">التقييم</div>
         <div class="stars-row" id="modalStars">${buildStarsPicker(playerFormRating)}</div>
@@ -814,7 +880,7 @@ function updatePlayerPreview() {
   if (!wrap) return;
   const name = document.getElementById('pName')?.value || '';
   const pos  = document.getElementById('pPos')?.value  || 'مهاجم';
-  const img  = document.getElementById('pImg')?.value  || '';
+  const img  = document.getElementById('pImgData')?.value || '';
   if (!name) { wrap.innerHTML = ''; return; }
   const stats = {};
   Object.keys(STAT_LABELS).forEach(k => {
@@ -833,7 +899,7 @@ function savePlayerModal() {
   const stats = {};
   Object.keys(STAT_LABELS).forEach(k => {
     const el = document.getElementById(`stat_${k}`);
-    stats[k] = el ? Math.min(99, Math.max(0, Number(el.value)||0)) : 70;
+    stats[k] = el ? Math.min(100, Math.max(0, Number(el.value)||0)) : 70;
   });
 
   const data = {
@@ -841,7 +907,7 @@ function savePlayerModal() {
     position: document.getElementById('pPos')?.value || 'مهاجم',
     age:      Number(document.getElementById('pAge')?.value)    || 14,
     number:   Number(document.getElementById('pNumber')?.value) || 0,
-    image:    document.getElementById('pImg')?.value || 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=500&q=80',
+    image:    document.getElementById('pImgData')?.value || 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=500&q=80',
     rating:   playerFormRating,
     notes:    document.getElementById('pNotes')?.value || '',
     stats,
@@ -962,6 +1028,170 @@ function starsHtml(val, color='#38bdf8') {
 }
 
 // ══════════════════════════════════════════════════
+//  IMAGE UPLOAD HANDLERS
+// ══════════════════════════════════════════════════
+function onImgFileChange(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const dataUrl = e.target.result;
+    document.getElementById('pImgData').value = dataUrl;
+    document.getElementById('pImg').value = '';
+    const thumb = document.getElementById('imgPreviewThumb');
+    if (thumb) { thumb.outerHTML = `<img id="imgPreviewThumb" src="${dataUrl}" alt="preview" />`; }
+    updatePlayerPreview();
+  };
+  reader.readAsDataURL(file);
+}
+
+function onImgUrlChange(url) {
+  document.getElementById('pImgData').value = url;
+  const thumb = document.getElementById('imgPreviewThumb');
+  if (thumb && url) { thumb.outerHTML = `<img id="imgPreviewThumb" src="${url}" alt="preview" />`; }
+  updatePlayerPreview();
+}
+
+// ══════════════════════════════════════════════════
+//  SAVED FORMATION PLANS
+// ══════════════════════════════════════════════════
+function fmtSavePlan() {
+  const name = document.getElementById('fmtNameInput')?.value?.trim();
+  const day  = document.getElementById('fmtDayInput')?.value?.trim();
+  if (!name) { toast('أدخل اسم الخطة', 'error'); return; }
+  const s = getState();
+  const plan = {
+    name,
+    day: day || '—',
+    slots: JSON.parse(JSON.stringify(s.formationSlots)),
+  };
+  addFormationPlan(plan);
+  toast(`تم حفظ خطة "${name}" ✅`);
+  render();
+}
+
+function fmtDeletePlan(id) {
+  if (confirm('حذف هذه الخطة المحفوظة؟')) {
+    deleteFormationPlan(id);
+    toast('تم الحذف', 'error');
+    render();
+  }
+}
+
+function fmtActivatePlan(id) {
+  const s = getState();
+  const plan = s.savedFormations.find(f => f.id === id);
+  if (!plan) return;
+  setFormationSlots(JSON.parse(JSON.stringify(plan.slots)));
+  setFormationName(plan.name);
+  toast(`تم تحميل خطة "${plan.name}" ✅`);
+  render();
+}
+
+// ══════════════════════════════════════════════════
+//  ADMIN: SITE STATS (manual override)
+// ══════════════════════════════════════════════════
+function renderAdminSiteStats(s) {
+  const ov = s.siteStatsOverride || {};
+  return `
+  <div class="admin-section${adminTab==='siteStats'?' active':''}" data-section="siteStats">
+    <div class="admin-form-box">
+      <h4>📊 تخصيص إحصائيات الواجهة الرئيسية</h4>
+      <p style="color:#64748b;font-size:13px;margin-bottom:16px">
+        بإمكانك تحديد نصوص وأرقام مختلفة تظهر في بطاقات الواجهة الرئيسية بدلاً من القيم التلقائية.
+        اتركها فارغة لاستخدام القيم الحقيقية.
+      </p>
+      <div class="form-grid">
+        <div class="form-field">
+          <div class="form-label">👥 عدد اللاعبين (العنوان)</div>
+          <input class="form-input" id="ov_players_val" placeholder="${s.players.length} (تلقائي)" value="${ov.players_val||''}" />
+        </div>
+        <div class="form-field">
+          <div class="form-label">👥 تسمية بطاقة اللاعبين</div>
+          <input class="form-input" id="ov_players_lbl" placeholder="لاعب مسجل (تلقائي)" value="${ov.players_lbl||''}" />
+        </div>
+        <div class="form-field">
+          <div class="form-label">📅 عدد الجلسات (العنوان)</div>
+          <input class="form-input" id="ov_sessions_val" placeholder="${s.training.length} (تلقائي)" value="${ov.sessions_val||''}" />
+        </div>
+        <div class="form-field">
+          <div class="form-label">📅 تسمية بطاقة الجلسات</div>
+          <input class="form-input" id="ov_sessions_lbl" placeholder="جلسة تمرين (تلقائي)" value="${ov.sessions_lbl||''}" />
+        </div>
+        <div class="form-field">
+          <div class="form-label">📰 عدد الإعلانات (العنوان)</div>
+          <input class="form-input" id="ov_news_val" placeholder="${s.news.length} (تلقائي)" value="${ov.news_val||''}" />
+        </div>
+        <div class="form-field">
+          <div class="form-label">📰 تسمية بطاقة الأخبار</div>
+          <input class="form-input" id="ov_news_lbl" placeholder="إعلان (تلقائي)" value="${ov.news_lbl||''}" />
+        </div>
+        <div class="form-field">
+          <div class="form-label">🏴 قيمة التشكيلة</div>
+          <input class="form-input" id="ov_formation_val" placeholder="${s.formationName||'—'} (تلقائي)" value="${ov.formation_val||''}" />
+        </div>
+        <div class="form-field">
+          <div class="form-label">🏴 تسمية بطاقة التشكيلة</div>
+          <input class="form-input" id="ov_formation_lbl" placeholder="التشكيلة (تلقائي)" value="${ov.formation_lbl||''}" />
+        </div>
+        <div class="form-field full">
+          <div class="form-label">💬 نص Hero الرئيسي (اختياري)</div>
+          <input class="form-input" id="ov_hero_text" placeholder="منصة إدارة متكاملة..." value="${ov.hero_text||''}" />
+        </div>
+        <div class="form-field full">
+          <div class="form-label">🏷️ عنوان Hero</div>
+          <input class="form-input" id="ov_hero_tag" placeholder="🏆 أكاديمية كرة قدم احترافية (تلقائي)" value="${ov.hero_tag||''}" />
+        </div>
+      </div>
+      <div class="form-btns">
+        <button class="btn-save" onclick="saveSiteStats()">💾 حفظ التخصيصات</button>
+        <button class="btn-cancel" onclick="resetSiteStats()">↩️ إعادة الضبط</button>
+      </div>
+    </div>
+    <div style="margin-top:20px;padding:16px;background:rgba(56,189,248,.05);border:1px solid rgba(56,189,248,.15);border-radius:14px">
+      <div style="font-size:11px;font-weight:900;color:#38bdf8;letter-spacing:1px;margin-bottom:10px">👀 معاينة البطاقات</div>
+      <div class="stats-grid" style="margin-bottom:0">
+        ${buildStatCards(s)}
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildStatCards(s) {
+  const ov = s.siteStatsOverride || {};
+  return [
+    { icon:'👥', val: ov.players_val   || s.players.length,    lbl: ov.players_lbl   || 'لاعب مسجل',    color:'#38bdf8' },
+    { icon:'📅', val: ov.sessions_val  || s.training.length,   lbl: ov.sessions_lbl  || 'جلسة تمرين',   color:'#10b981' },
+    { icon:'📰', val: ov.news_val      || s.news.length,       lbl: ov.news_lbl      || 'إعلان',         color:'#a78bfa' },
+    { icon:'🏴', val: ov.formation_val || s.formationName||'—',lbl: ov.formation_lbl || 'التشكيلة',      color:'#f59e0b' },
+  ].map(c => statCard(c.icon, c.lbl, c.val, c.color)).join('');
+}
+
+function saveSiteStats() {
+  const ov = {
+    players_val:   document.getElementById('ov_players_val')?.value.trim(),
+    players_lbl:   document.getElementById('ov_players_lbl')?.value.trim(),
+    sessions_val:  document.getElementById('ov_sessions_val')?.value.trim(),
+    sessions_lbl:  document.getElementById('ov_sessions_lbl')?.value.trim(),
+    news_val:      document.getElementById('ov_news_val')?.value.trim(),
+    news_lbl:      document.getElementById('ov_news_lbl')?.value.trim(),
+    formation_val: document.getElementById('ov_formation_val')?.value.trim(),
+    formation_lbl: document.getElementById('ov_formation_lbl')?.value.trim(),
+    hero_text:     document.getElementById('ov_hero_text')?.value.trim(),
+    hero_tag:      document.getElementById('ov_hero_tag')?.value.trim(),
+  };
+  setSiteStatsOverride(ov);
+  toast('تم حفظ تخصيصات الواجهة ✅');
+  render();
+}
+
+function resetSiteStats() {
+  setSiteStatsOverride({});
+  toast('تم إعادة الضبط');
+  render();
+}
+
+// ══════════════════════════════════════════════════
 //  FOOTER
 // ══════════════════════════════════════════════════
 document.body.insertAdjacentHTML('beforeend', `
@@ -971,6 +1201,10 @@ document.body.insertAdjacentHTML('beforeend', `
 `);
 
 // ══════════════════════════════════════════════════
-//  INIT
+//  INIT — wait for Supabase/localStorage to load
 // ══════════════════════════════════════════════════
-navigate('home');
+if (window._dataReady) {
+  navigate('home');
+} else {
+  window._onDataReady = function() { navigate('home'); };
+}
