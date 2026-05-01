@@ -7,10 +7,10 @@ const STORAGE_KEY    = 'future_academy_v3'; // localStorage backup
 
 // ─── Supabase Config ──────────────────────────────
 const SUPABASE_URL  = 'https://vuuzrtklxldokxdsfgkk.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1dXpydGtseGxkb2t4ZHNmZ2trIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2MTczMjksImV4cCI6MjA5MzE5MzMyOX0.zboCW05WvDotoPCHJIAY4-IP-Tx1MqMF63kV-m1nssM'; // ← ضع مفتاحك هنا من Settings → API → anon public
+const SUPABASE_ANON = 'sb_publishable_xPAkIv26oZw0pW_y9t1opA_teNG5F3n';
 // ─────────────────────────────────────────────────
 
-const USE_SUPABASE = SUPABASE_ANON !== 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1dXpydGtseGxkb2t4ZHNmZ2trIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2MTczMjksImV4cCI6MjA5MzE5MzMyOX0.zboCW05WvDotoPCHJIAY4-IP-Tx1MqMF63kV-m1nssM';
+const USE_SUPABASE = SUPABASE_ANON !== 'YOUR_ANON_KEY_HERE';
 
 // ─── REST Helper ─────────────────────────────────
 async function sb(table, method, body, filter, extra) {
