@@ -40,7 +40,7 @@ async function sb(table, method, body, filter, extra) {
 function playerToRow(p) {
   return {
     name: p.name, position: p.position, age: p.age||14,
-    rating: p.rating||3, number: p.number||0, image: p.image||'', notes: p.notes||'',
+    rating: parseFloat(p.rating)||3, number: p.number||0, image: p.image||'', notes: p.notes||'',
     stamina:   (p.stats && p.stats.stamina)   != null ? p.stats.stamina   : 75,
     shot:      (p.stats && p.stats.shot)      != null ? p.stats.shot      : 70,
     pass:      (p.stats && p.stats.pass)      != null ? p.stats.pass      : 72,
@@ -142,10 +142,18 @@ async function loadState() {
         sb('weekly_top',       'GET', null, '?select=*&order=rank'),
         sb('formation_config', 'GET', null, '?select=*&id=eq.1'),
         sb('formation_slots',  'GET', null, '?select=*&order=line_index,slot_index'),
+        sb('site_config',      'GET', null, '?select=*'),
       ]);
 
       var playersRows=results[0], newsRows=results[1], trainingRows=results[2],
-          weeklyRows=results[3], fmtCfgRows=results[4], fmtSlotRows=results[5];
+          weeklyRows=results[3], fmtCfgRows=results[4], fmtSlotRows=results[5],
+          siteConfigRows=results[6];
+
+      // Parse site_config key-value rows
+      var siteConfig = {};
+      if (siteConfigRows && siteConfigRows.length) {
+        siteConfigRows.forEach(function(r){ siteConfig[r.key] = r.value; });
+      }
 
       var ls = lsLoad() || {};
 
@@ -159,7 +167,10 @@ async function loadState() {
         formationAnimated: (fmtCfgRows&&fmtCfgRows[0] ? fmtCfgRows[0].animated: false),
         formationDay:      ls.formationDay      || '',
         savedFormations:   ls.savedFormations   || [],
-        siteStatsOverride: ls.siteStatsOverride || {},
+        siteStatsOverride: {
+          hero_tag:  siteConfig.hero_tag  || ls.siteStatsOverride && ls.siteStatsOverride.hero_tag  || '',
+          hero_text: siteConfig.hero_text || ls.siteStatsOverride && ls.siteStatsOverride.hero_text || '',
+        },
       };
 
       if (!STATE.formationSlots || !STATE.formationSlots.length) STATE.formationSlots = defaultFormationSlots();
@@ -340,7 +351,20 @@ function deleteFormationPlan(id) {
   saveState();
 }
 
-// ─── Site Stats Override (localStorage) ──────────
+// ─── Site Config (Supabase + localStorage) ────────
+async function setSiteConfig(key, value) {
+  // Update in-memory state
+  if (!STATE.siteStatsOverride) STATE.siteStatsOverride = {};
+  STATE.siteStatsOverride[key] = value;
+  saveState();
+  // Upsert to Supabase
+  if (USE_SUPABASE) {
+    await sb('site_config', 'POST', [{key: key, value: value}], '',
+      {'Prefer': 'resolution=merge-duplicates,return=minimal'});
+  }
+}
+
+// ─── Site Stats Override (localStorage only) ──────
 function setSiteStatsOverride(ov) { STATE.siteStatsOverride=ov; saveState(); }
 
 // ─── Helpers ─────────────────────────────────────

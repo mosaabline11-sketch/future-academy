@@ -230,9 +230,7 @@ function buildPlayerCard(p, small = false, rank) {
   const nameSz  = small ? 11 : 14;
   const statSz  = small ? 9 : 11;
 
-  const stars = Array.from({length:5}).map((_,i) =>
-    `<span class="card-star${i < p.rating ? ' on' : ''}">${i < p.rating ? '★' : '☆'}</span>`
-  ).join('');
+  const stars = buildStarsDisplay(p.rating, cfg.color, small ? 11 : 14);
 
   // 6 stats in 3 columns
   const statEntries = Object.entries(p.stats || {}).slice(0, 6);
@@ -864,15 +862,41 @@ function openPlayerModal(id) {
 }
 
 function buildStarsPicker(val) {
-  return Array.from({length:5}).map((_,i) =>
-    `<span class="star-btn${i<val?' on':''}" onclick="setPlayerRating(${i+1})">★</span>`
-  ).join('');
+  // val can be 0.5, 1, 1.5 ... 5
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    const full = val >= i;
+    const half = !full && val >= i - 0.5;
+    html += `<span class="star-pick-wrap" style="position:relative;display:inline-block;font-size:22px;cursor:pointer;color:#f59e0b;margin:0 1px">`;
+    // left half click = i-0.5
+    html += `<span style="position:absolute;left:0;top:0;width:50%;height:100%;z-index:2" onclick="setPlayerRating(${i-0.5})"></span>`;
+    // right half click = i
+    html += `<span style="position:absolute;right:0;top:0;width:50%;height:100%;z-index:2" onclick="setPlayerRating(${i})"></span>`;
+    if (full) {
+      html += `★`;
+    } else if (half) {
+      // half star using gradient clip
+      html += `<span style="position:relative;display:inline-block">`;
+      html += `<span style="color:#334155">★</span>`;
+      html += `<span style="position:absolute;left:0;top:0;width:50%;overflow:hidden;color:#f59e0b">★</span>`;
+      html += `</span>`;
+    } else {
+      html += `<span style="color:#334155">★</span>`;
+    }
+    html += `</span>`;
+  }
+  return `<div style="display:flex;align-items:center;gap:2px;margin-top:4px">
+    ${html}
+    <span style="font-size:12px;color:#f59e0b;font-weight:900;margin-right:8px">${val} / 5</span>
+  </div>`;
 }
 
 function setPlayerRating(v) {
-  playerFormRating = v;
+  playerFormRating = Math.round(v * 2) / 2; // snap to 0.5
+  if (playerFormRating < 0.5) playerFormRating = 0.5;
+  if (playerFormRating > 5)   playerFormRating = 5;
   const row = document.getElementById('modalStars');
-  if (row) row.innerHTML = buildStarsPicker(v);
+  if (row) row.innerHTML = buildStarsPicker(playerFormRating);
   updatePlayerPreview();
 }
 
@@ -1021,11 +1045,29 @@ function deleteTrainingItem(id) {
 // ══════════════════════════════════════════════════
 //  HELPERS
 // ══════════════════════════════════════════════════
-function starsHtml(val, color='#38bdf8') {
-  return `<div class="stars-row" style="margin-top:4px">` +
-    Array.from({length:5}).map((_,i) =>
-      `<span style="font-size:13px;color:${i<val?color:'#334155'}">${i<val?'★':'☆'}</span>`
-    ).join('') + `</div>`;
+function buildStarsDisplay(val, color, size) {
+  size = size || 13; color = color || '#f59e0b';
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    const full = val >= i;
+    const half = !full && val >= i - 0.5;
+    if (full) {
+      html += `<span style="color:${color};font-size:${size}px">★</span>`;
+    } else if (half) {
+      html += `<span style="position:relative;display:inline-block;font-size:${size}px">`;
+      html += `<span style="color:#334155">★</span>`;
+      html += `<span style="position:absolute;left:0;top:0;width:50%;overflow:hidden;color:${color}">★</span>`;
+      html += `</span>`;
+    } else {
+      html += `<span style="color:#334155;font-size:${size}px">★</span>`;
+    }
+  }
+  return html;
+}
+
+function starsHtml(val, color) {
+  color = color || '#38bdf8';
+  return `<div class="stars-row" style="margin-top:4px;display:flex;align-items:center">${buildStarsDisplay(val, color, 13)}</div>`;
 }
 
 // ══════════════════════════════════════════════════
@@ -1099,8 +1141,8 @@ function renderAdminHeroText(s) {
     <div class="admin-form-box">
       <h4>✏️ تخصيص نصوص Hero</h4>
 
-      <div class="warn" style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#f59e0b">
-        ⚠️ <strong>تنبيه:</strong> هذه النصوص تُحفظ في <strong>localStorage</strong> فقط على جهازك — لا تُحفظ في Supabase ولا تظهر لزوار آخرين على أجهزة مختلفة.
+      <div style="background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#10b981">
+        ✅ هذه النصوص تُحفظ في <strong>Supabase</strong> وتظهر لجميع الزوار على أي جهاز.
       </div>
 
       <div class="form-grid">
@@ -1131,23 +1173,18 @@ function renderAdminHeroText(s) {
   </div>`;
 }
 
-function saveHeroText() {
-  const s = getState();
-  const ov = Object.assign({}, s.siteStatsOverride || {}, {
-    hero_tag:  document.getElementById('ov_hero_tag')?.value.trim(),
-    hero_text: document.getElementById('ov_hero_text')?.value.trim(),
-  });
-  setSiteStatsOverride(ov);
-  toast('تم حفظ النصوص ✅ (localStorage فقط)');
+async function saveHeroText() {
+  const tag  = document.getElementById('ov_hero_tag')?.value.trim()  || '';
+  const text = document.getElementById('ov_hero_text')?.value.trim() || '';
+  await setSiteConfig('hero_tag',  tag);
+  await setSiteConfig('hero_text', text);
+  toast('تم حفظ النصوص ✅' + (USE_SUPABASE ? ' (Supabase)' : ' (localStorage)'));
   render();
 }
 
 function resetHeroText() {
-  const s = getState();
-  const ov = Object.assign({}, s.siteStatsOverride || {});
-  delete ov.hero_tag;
-  delete ov.hero_text;
-  setSiteStatsOverride(ov);
+  setSiteConfig('hero_tag',  '');
+  setSiteConfig('hero_text', '');
   toast('تم إعادة الضبط');
   render();
 }
