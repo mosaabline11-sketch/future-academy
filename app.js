@@ -525,26 +525,21 @@ function showAdminTab(tab) {
 function renderAdminPlayers(s) {
   return `
   <div class="admin-section${adminTab==='players'?' active':''}" data-section="players">
-    <button class="btn-primary" style="margin-bottom:16px" onclick="openPlayerModal(null)">➕ إضافة لاعب جديد</button>
-    <div class="admin-list">
+    <button class="btn-primary" style="margin-bottom:20px" onclick="openPlayerModal(null)">➕ إضافة لاعب جديد</button>
+    ${s.players.length === 0 ? `<div class="empty-state"><div class="empty-state-icon">👥</div><p>لا يوجد لاعبون بعد</p></div>` : `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px">
       ${s.players.map(p => {
         const c = posCfg(p.position).color;
-        return `<div class="admin-list-item" style="border-color:${c}18">
-          <img class="admin-list-item-img" src="${p.image}"
-               onerror="this.src='https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=200&q=60'"
-               alt="${p.name}"/>
-          <div class="admin-list-item-info">
-            <div class="admin-list-item-name">${p.name}</div>
-            <div class="admin-list-item-sub" style="color:${c}">${p.position} · #${p.number||p.id}</div>
-            <div>${starsHtml(p.rating, c)}</div>
-          </div>
-          <div class="admin-list-actions">
-            <button class="btn-edit" onclick="openPlayerModal(${p.id})">✏️</button>
-            <button class="btn-del" onclick="confirmDeletePlayer(${p.id})">🗑️</button>
+        return `
+        <div style="position:relative">
+          ${buildPlayerCard(p, false)}
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+            <button class="btn-edit" style="flex:1;padding:8px;border-radius:10px" onclick="openPlayerModal(${p.id})">✏️ تعديل</button>
+            <button class="btn-del" style="padding:8px 12px;border-radius:10px" onclick="confirmDeletePlayer(${p.id})">🗑️</button>
           </div>
         </div>`;
       }).join('')}
-    </div>
+    </div>`}
   </div>`;
 }
 
@@ -862,32 +857,32 @@ function openPlayerModal(id) {
 }
 
 function buildStarsPicker(val) {
-  // val can be 0.5, 1, 1.5 ... 5
   let html = '';
   for (let i = 1; i <= 5; i++) {
     const full = val >= i;
     const half = !full && val >= i - 0.5;
-    html += `<span class="star-pick-wrap" style="position:relative;display:inline-block;font-size:22px;cursor:pointer;color:#f59e0b;margin:0 1px">`;
-    // left half click = i-0.5
-    html += `<span style="position:absolute;left:0;top:0;width:50%;height:100%;z-index:2" onclick="setPlayerRating(${i-0.5})"></span>`;
-    // right half click = i
+    const starColor = full ? '#f59e0b' : half
+      ? 'linear-gradient(to left, #334155 50%, #f59e0b 50%)'
+      : '#334155';
+
+    html += `<span style="position:relative;display:inline-block;font-size:28px;cursor:pointer;line-height:1;margin:0 2px">`;
+    // click left half → i-0.5
+    html += `<span style="position:absolute;left:0;top:0;width:50%;height:100%;z-index:2" onclick="setPlayerRating(${i - 0.5})"></span>`;
+    // click right half → i
     html += `<span style="position:absolute;right:0;top:0;width:50%;height:100%;z-index:2" onclick="setPlayerRating(${i})"></span>`;
+
     if (full) {
-      html += `★`;
+      html += `<span style="color:#f59e0b">★</span>`;
     } else if (half) {
-      // half star using gradient clip
-      html += `<span style="position:relative;display:inline-block">`;
-      html += `<span style="color:#334155">★</span>`;
-      html += `<span style="position:absolute;left:0;top:0;width:50%;overflow:hidden;color:#f59e0b">★</span>`;
-      html += `</span>`;
+      html += `<span style="position:relative;display:inline-block;color:#334155">★<span style="position:absolute;left:0;top:0;width:50%;overflow:hidden;color:#f59e0b;display:block">★</span></span>`;
     } else {
       html += `<span style="color:#334155">★</span>`;
     }
     html += `</span>`;
   }
-  return `<div style="display:flex;align-items:center;gap:2px;margin-top:4px">
+  return `<div style="display:flex;align-items:center;gap:0;margin-top:6px">
     ${html}
-    <span style="font-size:12px;color:#f59e0b;font-weight:900;margin-right:8px">${val} / 5</span>
+    <span style="font-size:14px;color:#f59e0b;font-weight:900;margin-right:10px;margin-top:2px">${val}</span>
   </div>`;
 }
 
@@ -1052,14 +1047,14 @@ function buildStarsDisplay(val, color, size) {
     const full = val >= i;
     const half = !full && val >= i - 0.5;
     if (full) {
-      html += `<span style="color:${color};font-size:${size}px">★</span>`;
+      html += `<span style="color:${color};font-size:${size}px;line-height:1">★</span>`;
     } else if (half) {
-      html += `<span style="position:relative;display:inline-block;font-size:${size}px">`;
+      html += `<span style="position:relative;display:inline-block;font-size:${size}px;line-height:1">`;
       html += `<span style="color:#334155">★</span>`;
       html += `<span style="position:absolute;left:0;top:0;width:50%;overflow:hidden;color:${color}">★</span>`;
       html += `</span>`;
     } else {
-      html += `<span style="color:#334155;font-size:${size}px">★</span>`;
+      html += `<span style="color:#334155;font-size:${size}px;line-height:1">★</span>`;
     }
   }
   return html;
@@ -1141,10 +1136,6 @@ function renderAdminHeroText(s) {
     <div class="admin-form-box">
       <h4>✏️ تخصيص نصوص Hero</h4>
 
-      <div style="background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#10b981">
-        ✅ هذه النصوص تُحفظ في <strong>Supabase</strong> وتظهر لجميع الزوار على أي جهاز.
-      </div>
-
       <div class="form-grid">
         <div class="form-field full">
           <div class="form-label">🏷️ الشعار الصغير فوق العنوان</div>
@@ -1194,7 +1185,7 @@ function resetHeroText() {
 // ══════════════════════════════════════════════════
 document.body.insertAdjacentHTML('beforeend', `
   <footer>
-    <strong>FUTURE ACADEMY</strong> &nbsp;·&nbsp; Football Management System &nbsp;·&nbsp; ${new Date().getFullYear()}
+    Made by <strong>Mosaab</strong>
   </footer>
 `);
 
