@@ -709,6 +709,13 @@ function setSiteStatsOverride(ov) {
   saveState();
 }
 
+// ─── Active Poll ─────────────────────────────────
+function setActivePoll(poll) { STATE.activePoll = poll; saveState(); }
+
+// ─── Captains ─────────────────────────────────────
+function setCaptainBig(id)   { STATE.captainBig   = id; saveState(); }
+function setCaptainSmall(id) { STATE.captainSmall  = id; saveState(); }
+
 // ─── Helpers ─────────────────────────────────────
 function posCfg(pos) {
   return POS_CFG[pos] || POS_CFG["مهاجم"];

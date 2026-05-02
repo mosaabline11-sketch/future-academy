@@ -886,3 +886,59 @@ footer strong { font-family:'Bebas Neue',cursive; letter-spacing:1px; font-size:
 .fmt-btn-del { background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.25); }
 .fmt-btn-del:hover { background:rgba(239,68,68,0.25); }
 
+
+/* ══════════════════════════════════════════════════
+   FIELD DOT — improved
+══════════════════════════════════════════════════ */
+.field-dot {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-family: 'Cairo', sans-serif;
+  cursor: default;
+  transition: transform .2s;
+  flex-shrink: 0;
+}
+.field-dot:hover { transform: scale(1.15); }
+.field-dot-pos  { font-size: 9px;  font-weight: 900; line-height: 1; letter-spacing:.5px; }
+.field-dot-name { font-size: 7px;  font-weight: 700; line-height: 1; margin-top: 2px; opacity:.9; text-align:center; max-width: 38px; overflow:hidden; white-space:nowrap; }
+
+/* ══════════════════════════════════════════════════
+   VOTE PAGE
+══════════════════════════════════════════════════ */
+.vote-card {
+  background: linear-gradient(160deg,#0f1629,#141e33);
+  border: 1px solid rgba(56,189,248,.15);
+  border-radius: 20px; padding: 28px;
+  max-width: 600px; margin: 0 auto;
+}
+.vote-question {
+  font-size: 18px; font-weight: 900; color: #fff;
+  margin-bottom: 20px; text-align: center;
+}
+.vote-options { display: flex; flex-direction: column; gap: 12px; }
+.vote-option {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px; padding: 14px 16px;
+  cursor: pointer; transition: .2s;
+}
+.vote-option:hover { background: rgba(56,189,248,.08); border-color: rgba(56,189,248,.25); }
+.vote-winner { border-color: rgba(56,189,248,.4) !important; background: rgba(56,189,248,.08) !important; }
+.vote-opt-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.vote-opt-label { font-size: 14px; font-weight: 700; color: #e2e8f0; }
+.vote-opt-count { font-size: 13px; font-weight: 900; }
+.vote-bar-bg { height: 6px; background: rgba(255,255,255,.08); border-radius: 3px; }
+.vote-bar-fill { height: 6px; border-radius: 3px; transition: width .4s ease; }
+.vote-total { text-align: center; font-size: 13px; color: #64748b; margin-top: 16px; }
+
+/* ══════════════════════════════════════════════════
+   CAPTAIN PREVIEW
+══════════════════════════════════════════════════ */
+.captain-preview {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 10px; padding: 10px 14px;
+  background: rgba(255,255,255,.04);
+  border-radius: 12px; border: 1px solid rgba(255,255,255,.08);
+}
