@@ -132,15 +132,16 @@ function renderHome(s) {
         <div class="hero-card-title">FUTURE ACADEMY</div>
         <div class="hero-card-sub">TRAIN • ANALYZE • WIN</div>
         <div class="hero-mini-stats">
-          <div class="hero-mini-stat"><div class="val">${ov.players_val || s.players.length}</div><div class="lbl">${ov.players_lbl || 'لاعب'}</div></div>
-          <div class="hero-mini-stat"><div class="val" style="color:#10b981">${ov.sessions_val || s.training.length}</div><div class="lbl">${ov.sessions_lbl || 'تمرين'}</div></div>
+          <div class="hero-mini-stat"><div class="val">${s.players.length}</div><div class="lbl">لاعب</div></div>
+          <div class="hero-mini-stat"><div class="val" style="color:#10b981">${s.training.length}</div><div class="lbl">تمرين</div></div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="stats-grid">
-    ${buildStatCards(s)}
+  <div class="stats-grid" style="grid-template-columns:repeat(2,1fr)">
+    ${statCard('👥','لاعب مسجل', s.players.length, '#38bdf8')}
+    ${statCard('🏴','التشكيلة', s.formationName||'—', '#f59e0b')}
   </div>
 
   ${weekly.length ? `
@@ -483,7 +484,7 @@ function renderAdmin(s) {
     {id:'news',      label:'📰 الأخبار'},
     {id:'training',  label:'💪 التمارين'},
     {id:'formation', label:'🏴 الخطط'},
-    {id:'siteStats', label:'📊 إحصائيات الواجهة'},
+    {id:'heroText',  label:'✏️ نص Hero'},
   ];
 
   return `
@@ -505,7 +506,7 @@ function renderAdmin(s) {
     ${renderAdminNews(s)}
     ${renderAdminTraining(s)}
     ${renderAdminFormation(s)}
-    ${renderAdminSiteStats(s)}
+    ${renderAdminHeroText(s)}
   </div>`;
 }
 
@@ -1089,104 +1090,64 @@ function fmtActivatePlan(id) {
 }
 
 // ══════════════════════════════════════════════════
-//  ADMIN: SITE STATS (manual override)
+//  ADMIN: HERO TEXT (localStorage only)
 // ══════════════════════════════════════════════════
-function renderAdminSiteStats(s) {
+function renderAdminHeroText(s) {
   const ov = s.siteStatsOverride || {};
   return `
-  <div class="admin-section${adminTab==='siteStats'?' active':''}" data-section="siteStats">
+  <div class="admin-section${adminTab==='heroText'?' active':''}" data-section="heroText">
     <div class="admin-form-box">
-      <h4>📊 تخصيص إحصائيات الواجهة الرئيسية</h4>
-      <p style="color:#64748b;font-size:13px;margin-bottom:16px">
-        بإمكانك تحديد نصوص وأرقام مختلفة تظهر في بطاقات الواجهة الرئيسية بدلاً من القيم التلقائية.
-        اتركها فارغة لاستخدام القيم الحقيقية.
-      </p>
+      <h4>✏️ تخصيص نصوص Hero</h4>
+
+      <div class="warn" style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#f59e0b">
+        ⚠️ <strong>تنبيه:</strong> هذه النصوص تُحفظ في <strong>localStorage</strong> فقط على جهازك — لا تُحفظ في Supabase ولا تظهر لزوار آخرين على أجهزة مختلفة.
+      </div>
+
       <div class="form-grid">
-        <div class="form-field">
-          <div class="form-label">👥 عدد اللاعبين (العنوان)</div>
-          <input class="form-input" id="ov_players_val" placeholder="${s.players.length} (تلقائي)" value="${ov.players_val||''}" />
-        </div>
-        <div class="form-field">
-          <div class="form-label">👥 تسمية بطاقة اللاعبين</div>
-          <input class="form-input" id="ov_players_lbl" placeholder="لاعب مسجل (تلقائي)" value="${ov.players_lbl||''}" />
-        </div>
-        <div class="form-field">
-          <div class="form-label">📅 عدد الجلسات (العنوان)</div>
-          <input class="form-input" id="ov_sessions_val" placeholder="${s.training.length} (تلقائي)" value="${ov.sessions_val||''}" />
-        </div>
-        <div class="form-field">
-          <div class="form-label">📅 تسمية بطاقة الجلسات</div>
-          <input class="form-input" id="ov_sessions_lbl" placeholder="جلسة تمرين (تلقائي)" value="${ov.sessions_lbl||''}" />
-        </div>
-        <div class="form-field">
-          <div class="form-label">📰 عدد الإعلانات (العنوان)</div>
-          <input class="form-input" id="ov_news_val" placeholder="${s.news.length} (تلقائي)" value="${ov.news_val||''}" />
-        </div>
-        <div class="form-field">
-          <div class="form-label">📰 تسمية بطاقة الأخبار</div>
-          <input class="form-input" id="ov_news_lbl" placeholder="إعلان (تلقائي)" value="${ov.news_lbl||''}" />
-        </div>
-        <div class="form-field">
-          <div class="form-label">🏴 قيمة التشكيلة</div>
-          <input class="form-input" id="ov_formation_val" placeholder="${s.formationName||'—'} (تلقائي)" value="${ov.formation_val||''}" />
-        </div>
-        <div class="form-field">
-          <div class="form-label">🏴 تسمية بطاقة التشكيلة</div>
-          <input class="form-input" id="ov_formation_lbl" placeholder="التشكيلة (تلقائي)" value="${ov.formation_lbl||''}" />
+        <div class="form-field full">
+          <div class="form-label">🏷️ الشعار الصغير فوق العنوان</div>
+          <div style="font-size:11px;color:#475569;margin-bottom:6px">يظهر فوق كلمة FUTURE ACADEMY — مثال: 🏆 أكاديمية كرة قدم احترافية</div>
+          <input class="form-input" id="ov_hero_tag" placeholder="🏆 أكاديمية كرة قدم احترافية" value="${ov.hero_tag||''}" />
         </div>
         <div class="form-field full">
-          <div class="form-label">💬 نص Hero الرئيسي (اختياري)</div>
-          <input class="form-input" id="ov_hero_text" placeholder="منصة إدارة متكاملة..." value="${ov.hero_text||''}" />
-        </div>
-        <div class="form-field full">
-          <div class="form-label">🏷️ عنوان Hero</div>
-          <input class="form-input" id="ov_hero_tag" placeholder="🏆 أكاديمية كرة قدم احترافية (تلقائي)" value="${ov.hero_tag||''}" />
+          <div class="form-label">💬 النص الوصفي تحت العنوان</div>
+          <div style="font-size:11px;color:#475569;margin-bottom:6px">يظهر تحت FUTURE ACADEMY كوصف للموقع</div>
+          <input class="form-input" id="ov_hero_text" placeholder="منصة إدارة متكاملة للاعبين، التمارين، الخطط التكتيكية، والأخبار." value="${ov.hero_text||''}" />
         </div>
       </div>
+
       <div class="form-btns">
-        <button class="btn-save" onclick="saveSiteStats()">💾 حفظ التخصيصات</button>
-        <button class="btn-cancel" onclick="resetSiteStats()">↩️ إعادة الضبط</button>
+        <button class="btn-save" onclick="saveHeroText()">💾 حفظ النصوص</button>
+        <button class="btn-cancel" onclick="resetHeroText()">↩️ إعادة الضبط</button>
       </div>
-    </div>
-    <div style="margin-top:20px;padding:16px;background:rgba(56,189,248,.05);border:1px solid rgba(56,189,248,.15);border-radius:14px">
-      <div style="font-size:11px;font-weight:900;color:#38bdf8;letter-spacing:1px;margin-bottom:10px">👀 معاينة البطاقات</div>
-      <div class="stats-grid" style="margin-bottom:0">
-        ${buildStatCards(s)}
+
+      <div style="margin-top:16px;padding:14px;background:rgba(56,189,248,.05);border:1px solid rgba(56,189,248,.1);border-radius:12px">
+        <div style="font-size:11px;font-weight:900;color:#38bdf8;margin-bottom:8px">👀 معاينة</div>
+        <div style="font-size:12px;color:#f59e0b;font-weight:700">${ov.hero_tag || '🏆 أكاديمية كرة قدم احترافية'}</div>
+        <div style="font-family:'Bebas Neue',cursive;font-size:26px;color:#fff;line-height:1.1;margin:4px 0">FUTURE<br>ACADEMY</div>
+        <div style="font-size:12px;color:#64748b">${ov.hero_text || 'منصة إدارة متكاملة للاعبين، التمارين، الخطط التكتيكية، والأخبار.'}</div>
       </div>
     </div>
   </div>`;
 }
 
-function buildStatCards(s) {
-  const ov = s.siteStatsOverride || {};
-  return [
-    { icon:'👥', val: ov.players_val   || s.players.length,    lbl: ov.players_lbl   || 'لاعب مسجل',    color:'#38bdf8' },
-    { icon:'📅', val: ov.sessions_val  || s.training.length,   lbl: ov.sessions_lbl  || 'جلسة تمرين',   color:'#10b981' },
-    { icon:'📰', val: ov.news_val      || s.news.length,       lbl: ov.news_lbl      || 'إعلان',         color:'#a78bfa' },
-    { icon:'🏴', val: ov.formation_val || s.formationName||'—',lbl: ov.formation_lbl || 'التشكيلة',      color:'#f59e0b' },
-  ].map(c => statCard(c.icon, c.lbl, c.val, c.color)).join('');
-}
-
-function saveSiteStats() {
-  const ov = {
-    players_val:   document.getElementById('ov_players_val')?.value.trim(),
-    players_lbl:   document.getElementById('ov_players_lbl')?.value.trim(),
-    sessions_val:  document.getElementById('ov_sessions_val')?.value.trim(),
-    sessions_lbl:  document.getElementById('ov_sessions_lbl')?.value.trim(),
-    news_val:      document.getElementById('ov_news_val')?.value.trim(),
-    news_lbl:      document.getElementById('ov_news_lbl')?.value.trim(),
-    formation_val: document.getElementById('ov_formation_val')?.value.trim(),
-    formation_lbl: document.getElementById('ov_formation_lbl')?.value.trim(),
-    hero_text:     document.getElementById('ov_hero_text')?.value.trim(),
-    hero_tag:      document.getElementById('ov_hero_tag')?.value.trim(),
-  };
+function saveHeroText() {
+  const s = getState();
+  const ov = Object.assign({}, s.siteStatsOverride || {}, {
+    hero_tag:  document.getElementById('ov_hero_tag')?.value.trim(),
+    hero_text: document.getElementById('ov_hero_text')?.value.trim(),
+  });
   setSiteStatsOverride(ov);
-  toast('تم حفظ تخصيصات الواجهة ✅');
+  toast('تم حفظ النصوص ✅ (localStorage فقط)');
   render();
 }
 
-function resetSiteStats() {
-  setSiteStatsOverride({});
+function resetHeroText() {
+  const s = getState();
+  const ov = Object.assign({}, s.siteStatsOverride || {});
+  delete ov.hero_tag;
+  delete ov.hero_text;
+  setSiteStatsOverride(ov);
   toast('تم إعادة الضبط');
   render();
 }
